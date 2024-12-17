@@ -1,9 +1,15 @@
 #!/usr/bin/env bash
 
-VPNGATE_URL=http://www.vpngate.net/api/iphone/
+VPNGATE_URL=https://www.vpngate.net/api/iphone/
 
-function global_ip {
-  curl -s inet-ip.info
+DEFAULT_GW=$(ip route | awk '/^default/ {
+  print $3
+  exit
+}')
+
+function health_check {
+  hash=$(uuidgen -r)
+  curl -s https://ppng.io/$hash
 }
 
 # vpn connect func
@@ -11,18 +17,29 @@ function connect {
   while :; do 
     echo start
     while read line; do 
+      ip=$(echo $line | cut -d ',' -f 2)
+      ip route add $ip/32 via $DEFAULT_GW
       line=$(echo $line | cut -d ',' -f 15)
       line=$(echo $line | tr -d '\r')
-      openvpn <(echo "$line" | base64 -d) ;
+      openvpn <(echo "$line" | base64 -d) | tee >(awk '/Initialization Sequence Completed/ {
+        exit 1
+      }' || pkill sleep)
     done < <(curl -s $VPNGATE_URL | grep ,Japan,JP, | grep -v public-vpn- | sort -R )
     echo end
   done
 }
 
-BEFORE_IP="$(global_ip)"
+# kill switch
+while read ip; do
+  ip route add $ip/32 via $DEFAULT_GW
+  echo $(date +'%F %T') /sbin/ip route add $ip/32 via $DEFAULT_GW
+done < <(awk '/^nameserver|^Address: / {
+  print $NF
+}' <(cat /etc/resolv.conf ; nslookup www.vpngate.net) | grep -v : )
+ip route del default
 
 # start proxy
-privoxy <(grep -v listen-address /etc/privoxy/config ; echo listen-address  0.0.0.0:8118) &
+privoxy <(grep -v ^listen-address /etc/privoxy/config ; echo listen-address  0.0.0.0:8118) &
 
 # connect vpn
 connect &
@@ -30,14 +47,9 @@ connect &
 # vpn check
 while :; do
   sleep 5
-  AFTER_IP=$(global_ip)
   result=$?
-  echo "before=$BEFORE_IP after=$AFTER_IP"
   if [ $result -ne 0 ]; then
-    pkill openvpn
-  elif [ "$BEFORE_IP" = "$AFTER_IP" ]; then
-    pkill openvpn
-  else 
-    sleep 55
+    health_check
   fi
+  pkill openvpn
 done

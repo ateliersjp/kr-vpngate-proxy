@@ -8,7 +8,7 @@ RUN apk add --no-cache \
     coreutils \
     linux-tools \
     util-linux && \
-    rename .new '' /etc/privoxy/*new
+    rename .new '' /etc/privoxy/*.new
 
 COPY start.sh /bin/
 
