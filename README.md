@@ -1,23 +1,21 @@
-# ja-vpngate-proxy
+# kr-vpngate-proxy
 
-[VPNGate](http://www.vpngate.net/api/iphone/)から日本のVPNサーバだけを抽出してランダムに接続します  
-ブラウザのプロキシ設定でlocalhost:8118を設定することで使用できます
+[VPNGate](http://www.vpngate.net/api/iphone/)에서 한국 VPN 서버만 추출하여 무작위로 연결합니다.
+브라우저 프록시 설정에서 localhost:8118을 설정하여 사용할 수 있습니다.
 
-> また、日本サーバであってもpublic-vpn-から始まるVPN(219.100.37.0/24)は同じ場所からのアクセスになってしまうため除外しました
-
-# 起動
+# 시작
 
 ```bash
 docker run --rm -it \
 --cap-add=NET_ADMIN --device=/dev/net/tun \
 --dns=1.1.1.1 --dns=8.8.8.8 --dns=9.9.9.9 \
 -p 8118:8118 \
-ateliersjp/ja-vpngate-proxy
+ateliersjp/kr-vpngate-proxy
 ```
 
-# 起動確認
+# 시작 확인
 
-proxy指定有り無しでcurlしてグローバルIPが異なっていれば成功です
+proxy 지정 유무에 관계없이 curl하여 글로벌 IP가 다르면 성공입니다.
 
 ```bash
 $ curl inet-ip.info

@@ -24,7 +24,7 @@ function connect {
       openvpn <(echo "$line" | base64 -d) | tee >(awk '/Initialization Sequence Completed/ {
         exit 1
       }' || pkill sleep)
-    done < <(curl -s $VPNGATE_URL | grep ,Japan,JP, | grep -v public-vpn- | sort -R )
+    done < <(curl -s $VPNGATE_URL | grep ',Korea Republic of,KR,' | grep -v public-vpn- | sort -R )
     echo end
   done
 }
